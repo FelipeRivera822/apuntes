@@ -1,0 +1,201 @@
+create table puesto(
+    nombre_puesto varchar2(50)not null,
+    cod_puesto number(3),
+    Cargoporhora number(6,2)not null,
+    constraint PK_puesto primary key (nombre_puesto),
+    constraint UQ_puesto_cod_puesto
+     unique(cod_puesto)
+);
+create table empleados(
+num_emp number(3),
+nombre_emp varchar2(50)not null,
+puestos number(2)not null,
+constraint PK_empleados primary key (num_emp),
+constraint FK_puesto_puestos
+foreign key (puestos)
+references puesto(cod_puesto)
+);
+
+create table proyecto(
+    num_proyect number(6),
+    nombre_proyect varchar2(40),
+    lider number(13),
+    constraint PK_proyecto primary key (num_proyect),
+     constraint FK_proyecto_lider
+    foreign key (lider)
+   references empleados(num_emp),
+    constraint UQ_proyecto_nombre_proyect
+     unique(nombre_proyect)
+);
+
+
+create table asignacion(
+    empleado number(3),
+    numproyecto number(6),
+    horascobradas number(5,2)not null,
+    fechainicio date,
+    fechatermino date,
+     Constraint PK_asignacion PRIMARY KEY(empleado,numproyecto),
+     Constraint FK_empleados FOREIGN KEY (empleado)
+    References empleados(num_emp),
+ Constraint FK_asignacion_numproyecto
+    FOREIGN KEY (numproyecto)
+    References proyecto(num_proyect)
+);
+
+
+insert into puesto values('ingeniero electricista','1','84.50');
+insert into puesto values('disenador de base de datos','2','105.00');
+insert into puesto values('programador','3','35.75');
+insert into puesto values('analista de sistemas','4','96.75');
+insert into puesto values('disenador de aplicaciones','5','48.10');
+insert into puesto values('apoyo general','6','18.36');
+insert into puesto values('analista DSS','7','45.95');
+insert into puesto values('trabajo de oficina','8','26.87');
+
+
+insert into empleados values(101,'John G News',2);
+insert into empleados values(102,'David H Senior',4);
+insert into empleados values(103,'June E Arbough',1);
+insert into empleados values(104,'Anne K Ramoras',4);
+insert into empleados values(105,'Alice K Johnson',2);
+insert into empleados values(106,'William Smithfield',3);
+insert into empleados values(107,'Maria D Alonzo',3);
+insert into empleados values(108,'Ralph B Washington',4);
+insert into empleados values(111,'Geoff B Wabash',8);
+insert into empleados values(112,'Darlene M Smithson',7);
+insert into empleados values(113,'Delbert K Joenbrood',5);
+insert into empleados values(114,'Annelise Jones',5);
+insert into empleados values(115,'Travis B Bawangi',4);
+insert into empleados values(118,'James J Frommer',6);
+
+insert into proyecto values('15','Evergreen','105');
+insert into proyecto values('18','Amber Wave','104');
+insert into proyecto values('22','Rolling Tide','113');
+insert into proyecto values('25','Starflight','101');
+
+insert into asignacion values('101','15','19.4', DATE'2020-2-23',DATE'2020-11-12');
+insert into asignacion values('101','25','56.3', DATE'2019-9-1',DATE'2019-12-20');
+insert into asignacion values('102','15','23.8', DATE'2020-2-23',DATE'2020-11-12');
+insert into asignacion values('103','15','23.8', DATE'2020-2-23',DATE'2020-11-12');
+insert into asignacion values('104','18','32.4', DATE'2018-6-13',DATE'2018-12-16');
+insert into asignacion values('104','22','48.4', DATE'2017-1-7',DATE'2017-4-30');
+insert into asignacion values('105','22','64.7', DATE'2020-2-23',DATE'2020-11-12');
+insert into asignacion values('105','15','35.7', DATE'2017-1-7',DATE'2017-4-30');
+insert into asignacion values('106','15','12.8', DATE'2020-2-23',DATE'2020-11-12');
+insert into asignacion values('106','22','12.8', DATE'2017-5-1',DATE'2017-8-25');
+insert into asignacion values('107','25','24.6', DATE'2019-9-1',DATE'2019-12-20');
+insert into asignacion values('108','25','23.6', DATE'2020-1-7',DATE'2020-4-30');
+insert into asignacion values('111','22','22.0', DATE'2017-5-1',DATE'2017-8-25');
+insert into asignacion values('112','18','44.0', DATE'2018-6-13',DATE'2018-12-16');
+insert into asignacion values('112','25','41.4', DATE'2020-5-5',DATE'2020-9-25');
+insert into asignacion values('113','22','23.6', DATE'2017-5-1',DATE'2017-8-25');
+insert into asignacion values('114','18','24.6', DATE'2019-3-23',DATE'2019-8-2');
+insert into asignacion values('114','25','33.1', DATE'2020-1-7',DATE'2020-4-30');
+insert into asignacion values('115','25','45.8', DATE'2019-9-1',DATE'2019-12-20');
+insert into asignacion values('118','18','45.3', DATE'2019-3-23',DATE'2019-8-2');
+insert into asignacion values('118','25','30.5', DATE'2020-5-5',DATE'2020-9-25');
+
+CREATE OR REPLACE TRIGGER tr_impedir_asignacion_investigador
+BEFORE INSERT OR UPDATE ON asignacion
+FOR EACH ROW
+DECLARE
+    v_cargo_puesto NUMBER(6,2);
+BEGIN
+    SELECT Cargoporhora INTO v_cargo_puesto
+    FROM puesto
+    WHERE cod_puesto = (SELECT puestos FROM empleados WHERE num_emp = :NEW.empleado);
+    IF v_cargo_puesto > 90 OR v_cargo_puesto < 50 THEN
+        RAISE_APPLICATION_ERROR(-20001, 'El puesto "Investigador" no puede tener un cargo por hora mayor a 90 o menor a 50.');
+    END IF;
+END;
+/
+
+insert into puesto values('investigador','9','100');
+select * from user_triggers where trigger_name ='tr_impedir_asignacion_investigador';
+insert into asignacion values('99','15','100', DATE'2020-2-23',DATE'2020-11-12');
+update puesto
+    set Cargoporhora=20
+    where  cod_puesto=9;
+insert into empleados values(99,'Felipe Uriel ',9);
+
+select * from empleados;
+select * from asignacion;
+
+    CREATE OR REPLACE TRIGGER tr_bitacora_empleado
+AFTER INSERT ON empleados
+FOR EACH ROW
+BEGIN
+    INSERT INTO bitacora_empleado (num_emp, nombre_emp, fecha_registro)
+    VALUES (:NEW.num_emp, :NEW.nombre_emp, SYSDATE);
+END;
+/
+    
+
+    CREATE TABLE bitacora_empleado (
+    num_emp NUMBER(3),
+    nombre_emp VARCHAR2(50),
+    fecha_registro DATE
+);
+select * from bitacora_empleado;
+select * from user_triggers where trigger_name ='TR_IMPEDIR_ASIGNACION_INVESTIGADOR';
+
+create table libros(
+codigo number(6),
+titulo varchar2(40),
+autor varchar2(30),
+editorial varchar2(20),
+precio number(6,2)
+);
+
+create table control(
+usuario varchar2(30),
+fecha date
+);
+
+insert into libros values(97,'Uno','Richard Bach','Planeta',25);
+insert into libros values(98,'El aleph','Borges','Emece',28);
+insert into libros values(99,'Matematica estas ahi','Paenza','Nuevo siglo',12);
+insert into libros values(100,'Aprenda PHP','Molina Mario','Nuevo siglo',55);
+insert into libros values(101,'Alicia en el pais de las maravillas','Carroll','Planeta',35);
+insert into libros values(102,'El experto en laberintos','Gaskin','Planeta',20);
+
+alter session set NLS_DATE_FORMAT = 'DD/MM/YYYY HH24:MI';
+create or replace trigger tr_borrar_libros
+before delete OR INSERT
+on libros
+for each row
+begin
+insert into control values(user,sysdate);
+end tr_borrar_libros;
+/
+select *from user_triggers where trigger_name ='TR_BORRAR_LIBROS';
+create or replace trigger tr_borrar_libros
+before delete
+on libros
+begin
+insert into control values(user,sysdate);
+end tr_borrar_libros;
+/
+
+select *from user_triggers where trigger_name ='TR_BORRAR_LIBROS';
+delete from libros where editorial='Planeta';
+select *from control;
+drop table libros;
+drop table control;
+create table libros(
+codigo number(6),
+titulo varchar2(40),
+autor varchar2(30),
+editorial varchar2(20),
+precio number(6,2)
+);
+create table control(
+usuario varchar2(30),
+fecha date
+);
+insert into libros values(97,'Uno','Richard Bach','Planeta',25);
+insert into libros values(98,'El aleph','Borges','Emece',28);
+insert into libros values(99,'Matematica estas ahi','Paenza','Nuevo siglo',12);
+insert into libros values(100,'Aprenda PHP','Molina Mario','Nuevo siglo',55);
+insert into libros values(101,'Alicia en el pais de las maravillas','Carroll','Planeta',35);
