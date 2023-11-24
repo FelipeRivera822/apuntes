@@ -1,0 +1,111 @@
+describe que es lo que hace este codigo
+CREATE TABLE CUENTAS (
+  CUENTA VARCHAR2(23) ,
+  SALDO NUMBER
+);
+
+CREATE TABLE MOVIMIENTOS (
+  CUENTA_ORIGEN VARCHAR2(23),
+  CUENTA_DESTINO VARCHAR2(23),
+  MONTO NUMBER,
+  FECHA DATE
+);
+
+INSERT INTO CUENTAS VALUES ('123', 200);
+INSERT INTO CUENTAS VALUES ('456', 300);
+INSERT INTO CUENTAS VALUES ('789', 400);
+INSERT INTO CUENTAS VALUES ('101', 100);
+
+DECLARE
+  importe NUMBER;
+  ctaOrigen VARCHAR2(23);
+  ctaDestino VARCHAR2(23);
+BEGIN
+  importe := 100;
+  ctaOrigen := '123';
+  ctaDestino := '456';
+  
+  UPDATE CUENTAS
+  SET SALDO = SALDO - importe
+  WHERE CUENTA = ctaOrigen;
+
+  UPDATE CUENTAS
+  SET SALDO = SALDO + importe
+  WHERE CUENTA = ctaDestino;
+
+  INSERT INTO MOVIMIENTOS VALUES (ctaOrigen, ctaDestino, importe*(-1), SYSDATE);
+  INSERT INTO MOVIMIENTOS VALUES (ctaDestino, ctaOrigen, importe, SYSDATE);
+
+  COMMIT;
+
+EXCEPTION
+  WHEN OTHERS THEN
+    dbms_output.put_line('Error en la transacción: ' || SQLERRM);
+    dbms_output.put_line('Se deshacen las modificaciones');
+    ROLLBACK;
+END;
+/
+select * from CUENTAS;
+SELECT * FROM MOVIMIENTOS;
+CREATE OR REPLACE PROCEDURE REALIZAR_TRANSACCION(
+  p_importe NUMBER,
+  p_ctaOrigen VARCHAR2,
+  p_ctaDestino VARCHAR2
+) AS
+BEGIN
+  UPDATE CUENTAS
+  SET SALDO = SALDO - p_importe
+  WHERE CUENTA = p_ctaOrigen;
+
+  UPDATE CUENTAS
+  SET SALDO = SALDO + p_importe
+  WHERE CUENTA = p_ctaDestino;
+
+  INSERT INTO MOVIMIENTOS VALUES (p_ctaOrigen, p_ctaDestino, p_importe*(-1), SYSDATE);
+  INSERT INTO MOVIMIENTOS VALUES (p_ctaDestino, p_ctaOrigen, p_importe, SYSDATE);
+
+  COMMIT;
+
+EXCEPTION
+  WHEN OTHERS THEN
+    dbms_output.put_line('Error en la transacción: ' || SQLERRM);
+    dbms_output.put_line('Se deshacen las modificaciones');
+    ROLLBACK;
+END REALIZAR_TRANSACCION;
+/
+DECLARE
+  importe NUMBER := 100;
+  ctaOrigen VARCHAR2(23) := 908;
+  ctaDestino VARCHAR2(23) := 098;
+BEGIN
+  REALIZAR_TRANSACCION(importe, ctaOrigen, ctaDestino);
+END;
+/
+select * from CUENTAS;
+SELECT * FROM MOVIMIENTOS;
+Creación de Tablas:
+
+Se crean dos tablas: CUENTAS y MOVIMIENTOS para almacenar información sobre las cuentas y los movimientos financieros.
+Inserción de Datos de Prueba:
+
+Se insertan datos de prueba en la tabla CUENTAS para representar el saldo inicial de algunas cuentas.
+Bloque Anónimo (PL/SQL):
+
+Un bloque anónimo PL/SQL comienza con la palabra clave DECLARE.
+Se declaran variables importe, ctaOrigen, y ctaDestino.
+Se asignan valores a estas variables, representando la cantidad de dinero a transferir (importe) y las cuentas de origen (ctaOrigen) y destino (ctaDestino) de la transacción.
+Transacción Financiera:
+
+Se ejecutan dos sentencias UPDATE en la tabla CUENTAS.
+La primera subtracta el importe del saldo de la cuenta de origen (ctaOrigen).
+La segunda suma el importe al saldo de la cuenta de destino (ctaDestino).
+Se realizan dos inserciones en la tabla MOVIMIENTOS para registrar los detalles de la transacción.
+La primera inserción representa la transferencia desde la cuenta de origen hacia la cuenta de destino (con un monto negativo).
+La segunda inserción representa la transferencia desde la cuenta de destino hacia la cuenta de origen.
+Confirmación y Manejo de Excepciones:
+
+Se realiza un COMMIT para confirmar los cambios en la base de datos.
+La sección EXCEPTION captura cualquier excepción que pueda ocurrir durante la transacción.
+Si se produce una excepción, se muestra un mensaje de error que incluye el mensaje de error específico (SQLERRM).
+Se muestra otro mensaje indicando que se deshacen las modificaciones y se ejecuta un ROLLBACK para revertir cualquier cambio realizado en caso de error.
+En resumen, este código simula una transacción financiera entre dos cuentas, actualizando los saldos en la tabla CUENTAS y registrando los detalles de la transacción en la tabla MOVIMIENTOS. Si ocurre algún error durante la transacción, se captura y se revierten los cambios.
