@@ -1,0 +1,59 @@
+CREATE OR REPLACE TRIGGER before_insert_asignacion
+BEFORE INSERT ON asignacion
+FOR EACH ROW
+DECLARE
+ v_count_empleados NUMBER;
+BEGIN
+v_count_empleados := contar_empleados_proyecto(:NEW.numproyecto);
+IF v_count_empleados >= 7 THEN
+    RAISE_APPLICATION_ERROR(-20001, 'No se puede asignar más de 7 empleados a un proyecto.');
+    END IF;
+END;
+/
+select * from asignacion;
+insert into asignacion values('111','20','19.4', DATE'2020-2-23',DATE'2020-11-12');
+insert into asignacion values('118','40','19.4', DATE'2020-2-23',DATE'2020-11-12');
+
+CREATE OR REPLACE FUNCTION contar_empleados_proyecto(p_numproyecto NUMBER)
+RETURN NUMBER
+IS
+    v_count NUMBER;
+BEGIN
+    SELECT COUNT(*)
+    INTO v_count
+    FROM asignacion
+    WHERE numproyecto = p_numproyecto;
+    
+    RETURN v_count;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RETURN 0;
+END;
+/
+
+
+SELECT COUNT(*)
+    FROM asignacion
+    WHERE numproyecto = 18;
+
+    
+CREATE OR REPLACE PROCEDURE insertar_empleado_proyecto(
+ p_empleado NUMBER,
+ p_numproyecto NUMBER,
+p_horascobradas NUMBER,
+ p_fechainicio DATE,
+p_fechatermino DATE
+)
+IS
+DUMMY NUMBER;
+BEGIN
+    SELECT 1
+    INTO DUMMY
+    FROM proyecto
+    WHERE num_proyect = p_numproyecto;
+    INSERT INTO asignacion VALUES (p_empleado, p_numproyecto, p_horascobradas, p_fechainicio, p_fechatermino);
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+RAISE_APPLICATION_ERROR(-20002, 'El proyecto especificado no existe.');
+END;
+/
